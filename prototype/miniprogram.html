@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>JobPilot 小程序</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#4f6ef7;--primary-light:#eef1ff;--primary-dark:#3b57d9;
+  --green:#22c55e;--green-light:#dcfce7;
+  --orange:#f59e0b;--orange-light:#fef3c7;
+  --red:#ef4444;--red-light:#fee2e2;
+  --text:#1e293b;--text-2:#64748b;--text-3:#94a3b8;
+  --bg:#f5f6fa;--card:#fff;--border:#e2e8f0;
+  --radius:12px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;font-family:var(--font);color:var(--text);background:#1a1a2e;font-size:14px;line-height:1.5}
+
+.phone-frame{
+  width:375px;height:812px;margin:20px auto;border-radius:40px;overflow:hidden;
+  background:var(--bg);position:relative;box-shadow:0 0 0 8px #222,0 0 0 10px #444,0 20px 60px rgba(0,0,0,.5);
+}
+.phone-notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:28px;
+  background:#222;border-radius:0 0 18px 18px;z-index:100;
+}
+.phone-screen{height:100%;display:flex;flex-direction:column;overflow:hidden}
+
+.status-bar{
+  height:44px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;
+  font-size:12px;font-weight:600;flex-shrink:0;
+}
+.status-bar .time{position:absolute;left:20px;font-size:12px}
+.status-bar .icons{position:absolute;right:20px;font-size:11px}
+
+.page-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;height:100%;flex-direction:column}
+.page.active{display:flex}
+
+.tab-bar{
+  height:56px;background:#fff;border-top:1px solid var(--border);
+  display:flex;flex-shrink:0;padding-bottom:var(--safe-bottom);
+}
+.tab-bar .tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;cursor:pointer;transition:color .15s;
+}
+.tab-bar .tab .icon{font-size:20px}
+.tab-bar .tab .label{font-size:10px;font-weight:500}
+.tab-bar .tab.active{color:var(--primary)}
+.tab-bar .tab:not(.active){color:var(--text-3)}
+.tab-bar .tab .badge-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--red);
+  position:absolute;top:6px;right:calc(50% - 14px);
+}
+
+.card{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin:0 16px 10px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+
+.section-title{font-size:13px;font-weight:600;color:var(--text);padding:16px 16px 8px;display:flex;justify-content:space-between;align-items:center}
+.section-title .more{font-size:12px;color:var(--text-3);font-weight:400}
+
+.hosting-card{
+  background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;border-radius:var(--radius);
+  padding:16px;margin:12px 16px;position:relative;overflow:hidden;
+}
+.hosting-card::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)}
+.hosting-card .status{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hosting-card .status .dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
+.hosting-card .status .dot.paused{background:var(--orange);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hosting-card .status .text{font-size:14px;font-weight:600}
+.hosting-card .stats{display:flex;gap:16px}
+.hosting-card .stats .stat{flex:1;text-align:center}
+.hosting-card .stats .stat .num{font-size:22px;font-weight:700}
+.hosting-card .stats .stat .lbl{font-size:10px;opacity:.8;margin-top:2px}
+.hosting-card .actions{display:flex;gap:8px;margin-top:12px}
+.hosting-card .actions button{
+  flex:1;padding:8px 0;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;
+}
+.btn-white{background:rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(4px)}
+.btn-white:hover{background:rgba(255,255,255,.3)}
+.btn-solid-white{background:#fff;color:var(--primary)}
+.btn-solid-white:hover{background:#f0f0ff}
+
+.pending-list .pending-item{
+  display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.pending-list .pending-item:last-child{border-bottom:none}
+.pending-list .pending-item .avatar{width:36px;height:36px;border-radius:50%;background:#e2e8f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-2)}
+.pending-list .pending-item .info{flex:1;min-width:0}
+.pending-list .pending-item .info .name{font-size:13px;font-weight:600}
+.pending-list .pending-item .info .msg{font-size:12px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pending-list .pending-item .meta{text-align:right;flex-shrink:0}
+.pending-list .pending-item .meta .time{font-size:10px;color:var(--text-3)}
+.pending-list .pending-item .meta .intent{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;margin-top:2px}
+.intent-urgent{background:var(--red-light);color:var(--red)}
+.intent-schedule{background:#dbeafe;color:#2563eb}
+.intent-salary{background:var(--orange-light);color:var(--orange)}
+.intent-general{background:#f1f5f9;color:var(--text-2)}
+
+.jd-list .jd-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);
+}
+.jd-list .jd-item:last-child{border-bottom:none}
+.jd-item .dir-bar{width:3px;border-radius:2px;flex-shrink:0}
+.jd-item .dir-bar.ai{background:#8b5cf6}
+.jd-item .dir-bar.b{background:#3b82f6}
+.jd-item .dir-bar.growth{background:var(--orange)}
+.jd-item .dir-bar.data{background:var(--green)}
+.jd-item .jd-info{flex:1;min-width:0}
+.jd-item .jd-info .row1{display:flex;justify-content:space-between;align-items:center}
+.jd-item .jd-info .title{font-size:14px;font-weight:600;flex:1;margin-right:8px}
+.jd-item .jd-info .salary{font-size:14px;font-weight:600;color:#ff6633;white-space:nowrap}
+.jd-item .jd-info .meta{font-size:11px;color:var(--text-3);margin-top:2px}
+.jd-item .jd-info .tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.jd-item .jd-info .tags .tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500}
+.tag-ai{background:#f3e8ff;color:#7c3aed}
+.tag-b{background:#dbeafe;color:#2563eb}
+.tag-growth{background:var(--orange-light);color:#d97706}
+.tag-data{background:var(--green-light);color:#16a34a}
+.tag-risk{background:var(--red-light);color:var(--red)}
+.tag-match-high{background:var(--green-light);color:#16a34a}
+.tag-match-mid{background:var(--orange-light);color:#d97706}
+.tag-match-low{background:var(--red-light);color:var(--red)}
+.jd-item .jd-info .summary{font-size:11px;color:var(--text-2);margin-top:4px;line-height:1.4}
+.jd-item .jd-actions{display:flex;flex-direction:column;gap:6px;justify-content:center;flex-shrink:0}
+.jd-item .jd-actions button{
+  width:60px;padding:6px 0;border-radius:8px;font-size:11px;font-weight:500;cursor:pointer;
+}
+
+.chat-list .chat-item{
+  display:flex;align-items:center;gap:10px;padding:12px 0;
+  border-bottom:1px solid var(--border);cursor:pointer;
+}
+.chat-list .chat-item:last-child{border-bottom:none}
+.chat-list .chat-item .avatar{width:40px;height:40px;border-radius:50%;background:#e2e8f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-2)}
+.chat-list .chat-item .info{flex:1;min-width:0}
+.chat-list .chat-item .info .row1{display:flex;justify-content:space-between;align-items:center}
+.chat-list .chat-item .info .name{font-size:14px;font-weight:600}
+.chat-list .chat-item .info .time{font-size:10px;color:var(--text-3)}
+.chat-list .chat-item .info .company{font-size:11px;color:var(--text-3);margin-top:1px}
+.chat-list .chat-item .info .preview{font-size:12px;color:var(--text-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-list .chat-item .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0}
+
+.chat-page{display:none;flex-direction:column;height:100%}
+.chat-page.active{display:flex}
+.chat-nav{
+  height:44px;display:flex;align-items:center;padding:0 12px;gap:8px;
+  background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.chat-nav .back{font-size:16px;color:var(--text-2);cursor:pointer;padding:4px}
+.chat-nav .title{flex:1;font-size:15px;font-weight:600;text-align:center;margin-right:28px}
+.chat-messages{flex:1;overflow-y:auto;padding:12px 16px;background:var(--bg)}
+.msg{margin-bottom:10px;max-width:80%}
+.msg.hr{margin-right:auto}
+.msg.me{margin-left:auto}
+.msg .bubble{padding:10px 12px;border-radius:16px;font-size:13px;line-height:1.5}
+.msg.hr .bubble{background:#fff;border:1px solid var(--border);border-top-left-radius:4px}
+.msg.me .bubble{background:var(--primary);color:#fff;border-top-right-radius:4px}
+.msg .time{font-size:10px;color:var(--text-3);margin-top:2px}
+.msg.me .time{text-align:right}
+.suggest-area{
+  padding:8px 12px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;
+}
+.suggest-area .suggest-label{font-size:10px;color:var(--text-3);margin-bottom:6px;font-weight:500}
+.suggest-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.suggest-chips .chip{
+  padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;
+  background:var(--primary-light);color:var(--primary);border:1px solid transparent;transition:all .15s;
+}
+.suggest-chips .chip:active{background:var(--primary);color:#fff}
+.chat-input-row{display:flex;gap:8px}
+.chat-input-row input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:20px;font-size:13px}
+.chat-input-row input:focus{border-color:var(--primary);outline:none}
+.chat-input-row button{padding:8px 16px;border-radius:20px;background:var(--primary);color:#fff;font-size:13px;font-weight:500;cursor:pointer}
+
+.profile-header{
+  background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;
+  padding:20px 16px 24px;text-align:center;position:relative;
+}
+.profile-header .avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.profile-header .name{font-size:16px;font-weight:600}
+.profile-header .email{font-size:12px;opacity:.7;margin-top:2px}
+
+.form-group{padding:0 16px;margin-bottom:16px}
+.form-group .label{font-size:12px;font-weight:500;color:var(--text-3);margin-bottom:6px}
+.form-group .value-row{
+  background:#fff;border-radius:var(--radius);padding:12px 14px;
+  display:flex;justify-content:space-between;align-items:center;font-size:13px;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.form-group .value-row .val{color:var(--text-2)}
+.form-group .value-row .arrow{color:var(--text-3);font-size:12px}
+
+.toggle-row{
+  background:#fff;border-radius:var(--radius);padding:12px 14px;
+  display:flex;justify-content:space-between;align-items:center;font-size:13px;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);margin:0 16px 8px;
+}
+.toggle{width:40px;height:22px;border-radius:11px;background:#ddd;position:relative;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--primary)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.toggle.on::after{left:20px}
+
+.empty-hint{text-align:center;padding:40px 20px;color:var(--text-3);font-size:13px}
+
+.filter-pills{display:flex;gap:6px;padding:0 16px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.filter-pills::-webkit-scrollbar{display:none}
+.filter-pills button{
+  padding:6px 14px;border-radius:16px;font-size:12px;white-space:nowrap;cursor:pointer;
+  background:#fff;color:var(--text-2);border:1px solid var(--border);transition:all .15s;
+}
+.filter-pills button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <span class="icons">● ▶ ■</span>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="page-content">
+        <div class="hosting-card">
+          <div class="status">
+            <div class="dot" id="mDot"></div>
+            <div class="text" id="mStatus">AI托管中</div>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="num">23</div><div class="lbl">今日打招呼</div></div>
+            <div class="stat"><div class="num">8</div><div class="lbl">HR回复</div></div>
+            <div class="stat"><div class="num">1</div><div class="lbl">已约面试</div></div>
+          </div>
+          <div class="actions">
+            <button class="btn-white" onclick="mToggleHosting()" id="mToggleBtn">暂停托管</button>
+            <button class="btn-solid-white" onclick="switchPage('jd')">查看岗位</button>
+          </div>
+        </div>
+
+        <div class="section-title">需要我看 <span class="more">3条待处理</span></div>
+        <div class="card">
+          <div class="pending-list">
+            <div class="pending-item" onclick="switchPage('chat')">
+              <div class="avatar">张</div>
+              <div class="info">
+                <div class="name">张女士 · 星辰科技</div>
+                <div class="msg">请问您最早什么时候可以到岗？</div>
+              </div>
+              <div class="meta">
+                <div class="time">3分钟前</div>
+                <div class="intent intent-urgent">需回复</div>
+              </div>
+            </div>
+            <div class="pending-item" onclick="switchPage('chat')">
+              <div class="avatar">李</div>
+              <div class="info">
+                <div class="name">李先生 · 鼎新集团</div>
+                <div class="msg">方便这周三下午来面试吗？</div>
+              </div>
+              <div class="meta">
+                <div class="time">15分钟前</div>
+                <div class="intent intent-schedule">约面试</div>
+              </div>
+            </div>
+            <div class="pending-item" onclick="switchPage('chat')">
+              <div class="avatar">王</div>
+              <div class="info">
+                <div class="name">王女士 · 社享科技</div>
+                <div class="msg">您的期望薪资大概是多少？</div>
+              </div>
+              <div class="meta">
+                <div class="time">1小时前</div>
+                <div class="intent intent-salary">聊薪资</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">今日投递计划 <span class="more">练手优先模式</span></div>
+        <div class="card">
+          <div style="font-size:12px;color:var(--text-2);line-height:2">
+            <div>✅ 15:00 AI产品经理 · 星辰科技</div>
+            <div>✅ 15:12 数据产品经理 · 云数科技</div>
+            <div style="color:var(--orange)">⏳ 15:25 B端产品经理 · 企服互联</div>
+            <div style="color:var(--text-3)">○ 15:38 增长产品经理 · 社享科技</div>
+            <div style="color:var(--text-3)">○ 15:52 高级产品经理 · 鼎新集团</div>
+          </div>
+          <div style="margin-top:8px;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:40%;background:var(--primary);border-radius:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JD PAGE -->
+    <div class="page" id="page-jd">
+      <div class="page-content" style="padding-top:8px">
+        <div class="filter-pills">
+          <button class="active" onclick="mFilterJd(this,'all')">全部 12</button>
+          <button onclick="mFilterJd(this,'ai')">AI产品 4</button>
+          <button onclick="mFilterJd(this,'b')">B端 3</button>
+          <button onclick="mFilterJd(this,'growth')">增长 2</button>
+          <button onclick="mFilterJd(this,'data')">数据 3</button>
+        </div>
+        <div class="card" style="margin-top:0">
+          <div class="jd-list">
+            <div class="jd-item" data-dir="ai">
+              <div class="dir-bar ai"></div>
+              <div class="jd-info">
+                <div class="row1"><div class="title">AI产品经理</div><div class="salary">25-40K</div></div>
+                <div class="meta">星辰科技 · 北京 · 3-5年</div>
+                <div class="tags"><span class="tag tag-ai">AI产品</span><span class="tag tag-match-high">高匹配</span><span class="tag tag-risk">薪资不透明</span></div>
+                <div class="summary">负责AI对话产品规划，需有大模型应用经验</div>
+              </div>
+              <div class="jd-actions">
+                <button style="background:var(--primary);color:#fff" onclick="mGreet(this)">打招呼</button>
+                <button style="background:#fff;color:var(--text-3);border:1px solid var(--border)" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+            <div class="jd-item" data-dir="b">
+              <div class="dir-bar b"></div>
+              <div class="jd-info">
+                <div class="row1"><div class="title">高级产品经理</div><div class="salary">30-50K</div></div>
+                <div class="meta">鼎新集团 · 上海 · 5-10年</div>
+                <div class="tags"><span class="tag tag-b">B端产品</span><span class="tag tag-match-mid">中匹配</span></div>
+                <div class="summary">企业SaaS平台产品负责人，需带5人以上团队</div>
+              </div>
+              <div class="jd-actions">
+                <button style="background:var(--primary);color:#fff" onclick="mGreet(this)">打招呼</button>
+                <button style="background:#fff;color:var(--text-3);border:1px solid var(--border)" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+            <div class="jd-item" data-dir="growth">
+              <div class="dir-bar growth"></div>
+              <div class="jd-info">
+                <div class="row1"><div class="title">增长产品经理</div><div class="salary">20-35K</div></div>
+                <div class="meta">社享科技 · 北京 · 3-5年</div>
+                <div class="tags"><span class="tag tag-growth">增长产品</span><span class="tag tag-match-high">高匹配</span></div>
+                <div class="summary">负责用户增长策略，需有A/B测试和数据分析经验</div>
+              </div>
+              <div class="jd-actions">
+                <button style="background:var(--primary);color:#fff" onclick="mGreet(this)">打招呼</button>
+                <button style="background:#fff;color:var(--text-3);border:1px solid var(--border)" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+            <div class="jd-item" data-dir="data">
+              <div class="dir-bar data"></div>
+              <div class="jd-info">
+                <div class="row1"><div class="title">数据产品经理</div><div class="salary">22-38K</div></div>
+                <div class="meta">云数科技 · 杭州 · 3-5年</div>
+                <div class="tags"><span class="tag tag-data">数据产品</span><span class="tag tag-match-mid">中匹配</span><span class="tag tag-risk">外包疑似</span></div>
+                <div class="summary">数据中台产品规划，需有BI工具或数据治理经验</div>
+              </div>
+              <div class="jd-actions">
+                <button style="background:var(--primary);color:#fff" onclick="mGreet(this)">打招呼</button>
+                <button style="background:#fff;color:var(--text-3);border:1px solid var(--border)" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT PAGE -->
+    <div class="page" id="page-chat">
+      <div class="page-content" id="chatPageList">
+        <div class="section-title" style="padding-top:8px">HR消息</div>
+        <div class="card" style="margin-top:0">
+          <div class="chat-list">
+            <div class="chat-item" onclick="mOpenChat('zhang')">
+              <div class="avatar">张</div>
+              <div class="info">
+                <div class="row1"><div class="name">张女士</div><div class="time">3分钟前</div></div>
+                <div class="company">星辰科技 · AI产品经理</div>
+                <div class="preview">请问您最早什么时候可以到岗？</div>
+              </div>
+              <div class="unread-dot"></div>
+            </div>
+            <div class="chat-item" onclick="mOpenChat('li')">
+              <div class="avatar">李</div>
+              <div class="info">
+                <div class="row1"><div class="name">李先生</div><div class="time">15分钟前</div></div>
+                <div class="company">鼎新集团 · 高级产品经理</div>
+                <div class="preview">方便这周三下午来面试吗？</div>
+              </div>
+              <div class="unread-dot"></div>
+            </div>
+            <div class="chat-item" onclick="mOpenChat('wang')">
+              <div class="avatar">王</div>
+              <div class="info">
+                <div class="row1"><div class="name">王女士</div><div class="time">1小时前</div></div>
+                <div class="company">社享科技 · 增长产品经理</div>
+                <div class="preview">您的期望薪资大概是多少？</div>
+              </div>
+              <div class="unread-dot"></div>
+            </div>
+            <div class="chat-item" onclick="mOpenChat('zhao')">
+              <div class="avatar">赵</div>
+              <div class="info">
+                <div class="row1"><div class="name">赵先生</div><div class="time">昨天</div></div>
+                <div class="company">云数科技 · 数据产品经理</div>
+                <div class="preview">好的，我这边先看看您的简历</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-page" id="chatPageDetail">
+        <div class="chat-nav">
+          <div class="back" onclick="mCloseChat()">←</div>
+          <div class="title" id="mChatName">张女士</div>
+        </div>
+        <div class="chat-messages" id="mChatMessages">
+          <div class="msg hr"><div class="bubble">您好，看到您的简历觉得很匹配，请问您最早什么时候可以到岗？</div><div class="time">14:32</div></div>
+          <div class="msg me"><div class="bubble">您好！感谢关注，我对这个岗位很感兴趣。</div><div class="time">14:35</div></div>
+          <div class="msg hr"><div class="bubble">请问您最早什么时候可以到岗？目前还在职吗？</div><div class="time">14:38</div></div>
+        </div>
+        <div class="suggest-area">
+          <div class="suggest-label">AI 建议回复</div>
+          <div class="suggest-chips" id="mSuggestChips">
+            <div class="chip" onclick="mSelectChip(this)">1个月内到岗</div>
+            <div class="chip" onclick="mSelectChip(this)">随时到岗</div>
+            <div class="chip" onclick="mSelectChip(this)">需交接1个月</div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="mChatInput" placeholder="输入消息...">
+            <button onclick="mSendMsg()">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="page-content">
+        <div class="profile-header">
+          <div class="avatar">👤</div>
+          <div class="name">张同学</div>
+          <div class="email">zhang@email.com</div>
+        </div>
+
+        <div class="section-title">求职偏好</div>
+        <div class="form-group"><div class="label">目标方向</div><div class="value-row"><div class="val">AI产品、B端产品、增长产品</div><div class="arrow">›</div></div></div>
+        <div class="form-group"><div class="label">目标城市</div><div class="value-row"><div class="val">北京、上海、杭州</div><div class="arrow">›</div></div></div>
+        <div class="form-group"><div class="label">最低薪资</div><div class="value-row"><div class="val">20K</div><div class="arrow">›</div></div></div>
+
+        <div class="section-title">投递策略</div>
+        <div class="form-group"><div class="label">策略模式</div><div class="value-row"><div class="val" style="color:var(--primary)">练手优先</div><div class="arrow">›</div></div></div>
+        <div class="form-group"><div class="label">每日打招呼上限</div><div class="value-row"><div class="val">50</div><div class="arrow">›</div></div></div>
+
+        <div class="section-title">自动回复</div>
+        <div class="toggle-row"><span>AI建议回复</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span>自动发送回复</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span>仅对高匹配岗位自动回复</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+        <div class="section-title">风险控制</div>
+        <div class="toggle-row"><span>风控自动暂停</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><span>跳过外包/风险岗位</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchPage('home')">
+        <div class="icon">🏠</div>
+        <div class="label">概览</div>
+      </div>
+      <div class="tab" onclick="switchPage('jd')">
+        <div class="icon">📋</div>
+        <div class="label">岗位</div>
+      </div>
+      <div class="tab" onclick="switchPage('chat')" style="position:relative">
+        <div class="icon">💬</div>
+        <div class="label">消息</div>
+        <div class="badge-dot"></div>
+      </div>
+      <div class="tab" onclick="switchPage('profile')">
+        <div class="icon">👤</div>
+        <div class="label">我的</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab-bar .tab').forEach(t=>t.classList.remove('active'));
+  const map={home:0,jd:1,chat:2,profile:3};
+  document.querySelectorAll('.tab-bar .tab')[map[name]].classList.add('active');
+  if(name==='chat') mCloseChat();
+}
+
+function mToggleHosting(){
+  const dot=document.getElementById('mDot');
+  const status=document.getElementById('mStatus');
+  const btn=document.getElementById('mToggleBtn');
+  if(dot.classList.contains('paused')){
+    dot.classList.remove('paused');status.textContent='AI托管中';btn.textContent='暂停托管';
+  }else{
+    dot.classList.add('paused');status.textContent='已暂停';btn.textContent='继续托管';
+  }
+}
+
+function mFilterJd(el,dir){
+  document.querySelectorAll('.filter-pills button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.jd-item').forEach(item=>{
+    if(dir==='all'){item.style.display='';return}
+    item.style.display=item.dataset.dir===dir?'':'none';
+  });
+}
+
+function mGreet(btn){
+  btn.textContent='已打招呼';btn.style.background='var(--green)';btn.disabled=true;
+  const item=btn.closest('.jd-item');item.style.opacity='.5';item.style.pointerEvents='none';
+}
+function mSkip(btn){
+  const item=btn.closest('.jd-item');item.style.opacity='.3';item.style.pointerEvents='none';
+}
+
+function mOpenChat(id){
+  document.getElementById('chatPageList').style.display='none';
+  document.getElementById('chatPageDetail').classList.add('active');
+  const data={
+    zhang:{name:'张女士',chips:['1个月内到岗','随时到岗','需交接1个月']},
+    li:{name:'李先生',chips:['周三下午可以','改到周四','本周都可以']},
+    wang:{name:'王女士',chips:['25-35K','面议','看综合package']},
+    zhao:{name:'赵先生',chips:['好的，期待','请问进度如何']},
+  };
+  const d=data[id]||data.zhang;
+  document.getElementById('mChatName').textContent=d.name;
+  document.getElementById('mSuggestChips').innerHTML=d.chips.map(c=>'<div class="chip" onclick="mSelectChip(this)">'+c+'</div>').join('');
+}
+function mCloseChat(){
+  document.getElementById('chatPageList').style.display='';
+  document.getElementById('chatPageDetail').classList.remove('active');
+}
+function mSelectChip(el){
+  document.getElementById('mChatInput').value=el.textContent;
+}
+function mSendMsg(){
+  const input=document.getElementById('mChatInput');
+  if(!input.value.trim())return;
+  const msgs=document.getElementById('mChatMessages');
+  const now=new Date();
+  const time=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  msgs.innerHTML+='<div class="msg me"><div class="bubble">'+input.value+'</div><div class="time">'+time+'</div></div>';
+  input.value='';msgs.scrollTop=msgs.scrollHeight;
+}
+</script>
+</body>
+</html>

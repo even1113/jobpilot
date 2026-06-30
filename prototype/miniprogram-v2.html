@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>JobPilot — Mini Program</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --accent:#6366f1;--accent-hover:#4f46e5;--accent-soft:rgba(99,102,241,.08);--accent-soft2:rgba(99,102,241,.14);
+  --green:#10b981;--green-soft:rgba(16,185,129,.1);
+  --amber:#f59e0b;--amber-soft:rgba(245,158,11,.1);
+  --rose:#f43f5e;--rose-soft:rgba(244,63,94,.1);
+  --sky:#0ea5e9;--sky-soft:rgba(14,165,233,.1);
+  --violet:#8b5cf6;--violet-soft:rgba(139,92,246,.1);
+  --gray-50:#fafafa;--gray-100:#f4f4f5;--gray-200:#e4e4e7;--gray-300:#d4d4d8;
+  --gray-400:#a1a1aa;--gray-500:#71717a;--gray-600:#52525b;--gray-700:#3f3f46;--gray-800:#27272a;--gray-900:#18181b;
+  --bg:#ffffff;--bg-sub:#fafafa;--bg-hover:#f4f4f5;
+  --text-primary:#18181b;--text-secondary:#52525b;--text-tertiary:#a1a1aa;
+  --border:rgba(0,0,0,.06);--border-strong:rgba(0,0,0,.1);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px rgba(0,0,0,.07);
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --transition:all .2s cubic-bezier(.4,0,.2,1);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;font-family:var(--font);color:var(--text-primary);background:#e8e8ec;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.phone{
+  width:375px;height:812px;margin:24px auto;border-radius:44px;overflow:hidden;
+  background:var(--bg);position:relative;
+  box-shadow:0 0 0 8px #1a1a1a,0 0 0 10px #333,0 24px 64px rgba(0,0,0,.25);
+}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:126px;height:28px;background:#1a1a1a;border-radius:0 0 18px 18px;z-index:100}
+.screen{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.status-bar{height:48px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:12px;font-weight:600;flex-shrink:0;position:relative}
+.status-bar .time{position:absolute;left:24px;font-size:12px}
+.status-bar .icons{position:absolute;right:24px;font-size:11px;letter-spacing:2px}
+
+.page{display:none;flex-direction:column;height:100%}
+.page.active{display:flex}
+.page-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.tab-bar{
+  height:56px;background:var(--bg);border-top:1px solid var(--border);
+  display:flex;flex-shrink:0;padding-bottom:var(--safe-bottom);
+}
+.tab-bar .tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;cursor:pointer;transition:var(--transition);position:relative;
+}
+.tab-bar .tab .t-icon{font-size:20px;line-height:1}
+.tab-bar .tab .t-label{font-size:10px;font-weight:600;letter-spacing:.2px}
+.tab-bar .tab.active{color:var(--accent)}
+.tab-bar .tab:not(.active){color:var(--gray-400)}
+.tab-bar .tab .t-badge{
+  position:absolute;top:4px;right:calc(50% - 16px);width:7px;height:7px;
+  border-radius:50%;background:var(--rose);
+}
+
+.hosting-hero{
+  background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;
+  padding:20px 20px 24px;position:relative;overflow:hidden;
+}
+.hosting-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)}
+.hosting-hero::after{content:'';position:absolute;bottom:-24px;left:-24px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.04)}
+.hosting-hero .hh-status{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.hh-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.5);animation:glow 2s ease infinite}
+.hh-dot.off{background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.4);animation:none}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.5}}
+.hh-text{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.hosting-hero .hh-stats{display:flex;gap:0}
+.hosting-hero .hh-stat{flex:1;text-align:center;padding:6px 0}
+.hosting-hero .hh-stat .num{font-size:26px;font-weight:700;letter-spacing:-.5px}
+.hosting-hero .hh-stat .lbl{font-size:10px;opacity:.7;font-weight:500;margin-top:2px}
+.hosting-hero .hh-actions{display:flex;gap:8px;margin-top:16px}
+.hosting-hero .hh-actions button{
+  flex:1;padding:10px 0;border-radius:var(--radius-sm);font-size:13px;font-weight:600;transition:var(--transition);
+}
+.hh-btn-ghost{background:rgba(255,255,255,.15);color:#fff;backdrop-filter:blur(8px)}
+.hh-btn-ghost:hover{background:rgba(255,255,255,.25)}
+.hh-btn-solid{background:#fff;color:var(--accent)}
+.hh-btn-solid:hover{background:rgba(255,255,255,.9)}
+
+.section{padding:0 20px}
+.section-head{display:flex;justify-content:space-between;align-items:center;padding:16px 0 10px}
+.section-head .s-title{font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:-.1px}
+.section-head .s-more{font-size:12px;color:var(--text-tertiary);font-weight:500}
+
+.pending-item{
+  display:flex;align-items:center;gap:12px;padding:14px 0;
+  border-bottom:1px solid var(--border);
+}
+.pending-item:last-child{border-bottom:none}
+.pending-item .pi-av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:600;flex-shrink:0}
+.pending-item .pi-info{flex:1;min-width:0}
+.pending-item .pi-name{font-size:14px;font-weight:600;color:var(--text-primary)}
+.pending-item .pi-msg{font-size:12px;color:var(--text-secondary);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pending-item .pi-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.pending-item .pi-time{font-size:10px;color:var(--text-tertiary)}
+.pi-intent{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;white-space:nowrap}
+.pi-intent.urgent{background:var(--rose-soft);color:var(--rose)}
+.pi-intent.schedule{background:var(--sky-soft);color:var(--sky)}
+.pi-intent.salary{background:var(--amber-soft);color:var(--amber)}
+
+.plan-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:14px 16px;
+}
+.plan-card .plan-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.plan-card .plan-head .plan-title{font-size:13px;font-weight:600}
+.plan-card .plan-head .plan-mode{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.plan-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:var(--text-secondary)}
+.plan-item .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.plan-item .dot.done{background:var(--green)}
+.plan-item .dot.active{background:var(--accent);box-shadow:0 0 6px rgba(99,102,241,.4)}
+.plan-item .dot.wait{background:var(--gray-300)}
+.plan-progress{height:3px;background:var(--gray-100);border-radius:2px;overflow:hidden;margin-top:8px}
+.plan-progress .fill{height:100%;border-radius:2px;background:var(--accent);transition:width .4s ease}
+
+.filter-pills{display:flex;gap:6px;padding:0 20px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.filter-pills::-webkit-scrollbar{display:none}
+.filter-pills button{
+  padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;
+  color:var(--gray-500);background:var(--bg);border:1px solid var(--border);transition:var(--transition);
+}
+.filter-pills button:hover{border-color:var(--gray-300)}
+.filter-pills button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.jd-item{
+  display:flex;gap:10px;padding:14px 0;border-bottom:1px solid var(--border);
+}
+.jd-item:last-child{border-bottom:none}
+.jd-item .ji-bar{width:3px;border-radius:2px;flex-shrink:0}
+.jd-item .ji-bar.ai{background:var(--violet)}
+.jd-item .ji-bar.b{background:var(--sky)}
+.jd-item .ji-bar.growth{background:var(--amber)}
+.jd-item .ji-bar.data{background:var(--green)}
+.jd-item .ji-info{flex:1;min-width:0}
+.jd-item .ji-row1{display:flex;justify-content:space-between;align-items:center}
+.jd-item .ji-title{font-size:14px;font-weight:600;flex:1;margin-right:8px}
+.jd-item .ji-salary{font-size:14px;font-weight:700;color:#ef6c35;white-space:nowrap}
+.jd-item .ji-meta{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+.jd-item .ji-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.ji-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px}
+.ji-tag.ai{background:var(--violet-soft);color:var(--violet)}
+.ji-tag.b{background:var(--sky-soft);color:var(--sky)}
+.ji-tag.growth{background:var(--amber-soft);color:var(--amber)}
+.ji-tag.data{background:var(--green-soft);color:var(--green)}
+.ji-tag.risk{background:var(--rose-soft);color:var(--rose)}
+.ji-tag.match-high{background:var(--green-soft);color:var(--green)}
+.ji-tag.match-mid{background:var(--amber-soft);color:var(--amber)}
+.ji-tag.match-low{background:var(--rose-soft);color:var(--rose)}
+.jd-item .ji-summary{font-size:11px;color:var(--text-secondary);line-height:1.5;margin-top:4px}
+.jd-item .ji-actions{display:flex;flex-direction:column;gap:6px;justify-content:center;flex-shrink:0}
+.jd-item .ji-actions button{
+  width:56px;padding:6px 0;border-radius:var(--radius-sm);font-size:11px;font-weight:600;transition:var(--transition);
+}
+.ji-btn-primary{background:var(--accent);color:#fff}
+.ji-btn-primary:hover{background:var(--accent-hover)}
+.ji-btn-ghost{background:var(--bg);color:var(--gray-500);border:1px solid var(--border)}
+.ji-btn-ghost:hover{border-color:var(--gray-300)}
+
+.chat-item{
+  display:flex;align-items:center;gap:10px;padding:12px 0;
+  border-bottom:1px solid var(--border);cursor:pointer;transition:var(--transition);
+}
+.chat-item:last-child{border-bottom:none}
+.chat-item .ci-av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:600;flex-shrink:0}
+.chat-item .ci-info{flex:1;min-width:0}
+.chat-item .ci-row1{display:flex;justify-content:space-between;align-items:center}
+.chat-item .ci-name{font-size:14px;font-weight:600}
+.chat-item .ci-time{font-size:10px;color:var(--text-tertiary)}
+.chat-item .ci-company{font-size:11px;color:var(--text-tertiary);margin-top:1px}
+.chat-item .ci-preview{font-size:12px;color:var(--text-secondary);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-item .ci-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+.chat-page{display:none;flex-direction:column;height:100%}
+.chat-page.active{display:flex}
+.cp-nav{
+  height:44px;display:flex;align-items:center;padding:0 12px;gap:8px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.cp-nav .cp-back{font-size:18px;color:var(--gray-400);cursor:pointer;padding:4px;transition:var(--transition);border-radius:6px}
+.cp-nav .cp-back:hover{background:var(--gray-100)}
+.cp-nav .cp-title{flex:1;font-size:15px;font-weight:700;text-align:center;margin-right:28px}
+.cp-messages{flex:1;overflow-y:auto;padding:16px 20px;background:var(--bg-sub)}
+.cp-msg{margin-bottom:10px;max-width:78%}
+.cp-msg.hr{margin-right:auto}
+.cp-msg.me{margin-left:auto}
+.cp-msg .cp-bubble{padding:10px 14px;border-radius:var(--radius-md);font-size:13px;line-height:1.6}
+.cp-msg.hr .cp-bubble{background:var(--bg);color:var(--text-primary);border:1px solid var(--border);border-top-left-radius:4px}
+.cp-msg.me .cp-bubble{background:var(--accent);color:#fff;border-top-right-radius:4px}
+.cp-msg .cp-time{font-size:10px;color:var(--text-tertiary);margin-top:3px}
+.cp-msg.me .cp-time{text-align:right}
+
+.cp-suggest{
+  padding:10px 16px 12px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg-sub);
+}
+.cp-suggest .cp-suggest-label{font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.cp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.cp-chip{
+  padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;
+  background:var(--bg);color:var(--accent);border:1px solid var(--border);transition:var(--transition);
+}
+.cp-chip:active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cp-input-row{display:flex;gap:8px}
+.cp-input-row input{
+  flex:1;padding:8px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;
+  background:var(--bg);transition:var(--transition);
+}
+.cp-input-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.cp-input-row button{
+  padding:8px 18px;border-radius:20px;background:var(--accent);color:#fff;
+  font-size:13px;font-weight:600;transition:var(--transition);
+}
+
+.profile-hero{
+  background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;
+  padding:24px 20px 28px;text-align:center;position:relative;overflow:hidden;
+}
+.profile-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)}
+.profile-hero .pr-av{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.15);margin:0 auto 10px;display:grid;place-items:center;font-size:22px;backdrop-filter:blur(4px)}
+.profile-hero .pr-name{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.profile-hero .pr-email{font-size:12px;opacity:.7;margin-top:3px}
+
+.form-section{padding:0 20px;margin-bottom:16px}
+.form-section .fs-label{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.form-row{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;
+  margin-bottom:6px;transition:var(--transition);
+}
+.form-row:hover{border-color:var(--border-strong)}
+.form-row .fr-val{color:var(--text-secondary);font-weight:500}
+.form-row .fr-val.accent{color:var(--accent);cursor:pointer}
+.form-row .fr-arrow{color:var(--text-tertiary);font-size:12px;margin-left:4px}
+
+.toggle-row{
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;
+  margin:0 20px 6px;transition:var(--transition);
+}
+.toggle-row:hover{border-color:var(--border-strong)}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--gray-200);position:relative;cursor:pointer;transition:var(--transition)}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);transition:var(--transition)}
+.toggle.on::after{left:20px}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="status-bar"><span class="time">9:41</span><span class="icons">● ▶ ■</span></div>
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="page-scroll">
+        <div class="hosting-hero">
+          <div class="hh-status"><div class="hh-dot" id="mDot"></div><div class="hh-text" id="mStatus">AI 托管运行中</div></div>
+          <div class="hh-stats">
+            <div class="hh-stat"><div class="num">23</div><div class="lbl">今日打招呼</div></div>
+            <div class="hh-stat"><div class="num">8</div><div class="lbl">HR 回复</div></div>
+            <div class="hh-stat"><div class="num">1</div><div class="lbl">已约面试</div></div>
+          </div>
+          <div class="hh-actions">
+            <button class="hh-btn-ghost" id="mToggle" onclick="mToggleHosting()">暂停托管</button>
+            <button class="hh-btn-solid" onclick="switchPage('jd')">查看岗位</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><div class="s-title">需要我看</div><div class="s-more">3 条待处理</div></div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 16px">
+            <div class="pending-item" onclick="switchPage('chat')">
+              <div class="pi-av" style="background:var(--rose-soft);color:var(--rose)">张</div>
+              <div class="pi-info"><div class="pi-name">张女士 · 星辰科技</div><div class="pi-msg">请问您最早什么时候可以到岗？</div></div>
+              <div class="pi-right"><div class="pi-time">3 分钟前</div><div class="pi-intent urgent">需回复</div></div>
+            </div>
+            <div class="pending-item" onclick="switchPage('chat')">
+              <div class="pi-av" style="background:var(--sky-soft);color:var(--sky)">李</div>
+              <div class="pi-info"><div class="pi-name">李先生 · 鼎新集团</div><div class="pi-msg">方便这周三下午来面试吗？</div></div>
+              <div class="pi-right"><div class="pi-time">15 分钟前</div><div class="pi-intent schedule">约面试</div></div>
+            </div>
+            <div class="pending-item" onclick="switchPage('chat')">
+              <div class="pi-av" style="background:var(--amber-soft);color:var(--amber)">王</div>
+              <div class="pi-info"><div class="pi-name">王女士 · 社享科技</div><div class="pi-msg">您的期望薪资大概是多少？</div></div>
+              <div class="pi-right"><div class="pi-time">1 小时前</div><div class="pi-intent salary">聊薪资</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section" style="margin-top:16px">
+          <div class="section-head"><div class="s-title">今日投递计划</div><div class="s-more">练手优先</div></div>
+          <div class="plan-card">
+            <div class="plan-item"><div class="dot done"></div>15:00 AI产品经理 · 星辰科技</div>
+            <div class="plan-item"><div class="dot done"></div>15:12 数据产品经理 · 云数科技</div>
+            <div class="plan-item"><div class="dot active"></div>15:25 B端产品经理 · 企服互联</div>
+            <div class="plan-item"><div class="dot wait"></div>15:38 增长产品经理 · 社享科技</div>
+            <div class="plan-item"><div class="dot wait"></div>15:52 高级产品经理 · 鼎新集团</div>
+            <div class="plan-progress"><div class="fill" style="width:40%"></div></div>
+          </div>
+        </div>
+        <div style="height:16px"></div>
+      </div>
+    </div>
+
+    <!-- JD -->
+    <div class="page" id="page-jd">
+      <div class="page-scroll">
+        <div style="padding-top:8px">
+          <div class="filter-pills">
+            <button class="active" onclick="mFilterJd(this,'all')">全部 12</button>
+            <button onclick="mFilterJd(this,'ai')">AI产品 4</button>
+            <button onclick="mFilterJd(this,'b')">B端 3</button>
+            <button onclick="mFilterJd(this,'growth')">增长 2</button>
+            <button onclick="mFilterJd(this,'data')">数据 3</button>
+          </div>
+        </div>
+        <div class="section">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 16px">
+            <div class="jd-item" data-dir="ai">
+              <div class="ji-bar ai"></div>
+              <div class="ji-info">
+                <div class="ji-row1"><div class="ji-title">AI产品经理</div><div class="ji-salary">25-40K</div></div>
+                <div class="ji-meta">星辰科技 · 北京 · 3-5年</div>
+                <div class="ji-tags"><span class="ji-tag ai">AI产品</span><span class="ji-tag match-high">高匹配</span><span class="ji-tag risk">薪资不透明</span></div>
+                <div class="ji-summary">负责AI对话产品规划，需有大模型应用经验</div>
+              </div>
+              <div class="ji-actions">
+                <button class="ji-btn-primary" onclick="mGreet(this)">打招呼</button>
+                <button class="ji-btn-ghost" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+            <div class="jd-item" data-dir="b">
+              <div class="ji-bar b"></div>
+              <div class="ji-info">
+                <div class="ji-row1"><div class="ji-title">高级产品经理</div><div class="ji-salary">30-50K</div></div>
+                <div class="ji-meta">鼎新集团 · 上海 · 5-10年</div>
+                <div class="ji-tags"><span class="ji-tag b">B端产品</span><span class="ji-tag match-mid">中匹配</span></div>
+                <div class="ji-summary">企业SaaS平台产品负责人，需带5人以上团队</div>
+              </div>
+              <div class="ji-actions">
+                <button class="ji-btn-primary" onclick="mGreet(this)">打招呼</button>
+                <button class="ji-btn-ghost" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+            <div class="jd-item" data-dir="growth">
+              <div class="ji-bar growth"></div>
+              <div class="ji-info">
+                <div class="ji-row1"><div class="ji-title">增长产品经理</div><div class="ji-salary">20-35K</div></div>
+                <div class="ji-meta">社享科技 · 北京 · 3-5年</div>
+                <div class="ji-tags"><span class="ji-tag growth">增长产品</span><span class="ji-tag match-high">高匹配</span></div>
+                <div class="ji-summary">负责用户增长策略，需有A/B测试和数据分析经验</div>
+              </div>
+              <div class="ji-actions">
+                <button class="ji-btn-primary" onclick="mGreet(this)">打招呼</button>
+                <button class="ji-btn-ghost" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+            <div class="jd-item" data-dir="data">
+              <div class="ji-bar data"></div>
+              <div class="ji-info">
+                <div class="ji-row1"><div class="ji-title">数据产品经理</div><div class="ji-salary">22-38K</div></div>
+                <div class="ji-meta">云数科技 · 杭州 · 3-5年</div>
+                <div class="ji-tags"><span class="ji-tag data">数据产品</span><span class="ji-tag match-mid">中匹配</span><span class="ji-tag risk">外包疑似</span></div>
+                <div class="ji-summary">数据中台产品规划，需有BI工具或数据治理经验</div>
+              </div>
+              <div class="ji-actions">
+                <button class="ji-btn-primary" onclick="mGreet(this)">打招呼</button>
+                <button class="ji-btn-ghost" onclick="mSkip(this)">跳过</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height:16px"></div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="page" id="page-chat">
+      <div class="page-scroll" id="chatListPage">
+        <div class="section">
+          <div class="section-head" style="padding-top:8px"><div class="s-title">HR 消息</div><div class="s-more">3 条未读</div></div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 16px">
+            <div class="chat-item" onclick="mOpenChat('zhang')">
+              <div class="ci-av" style="background:var(--rose-soft);color:var(--rose)">张</div>
+              <div class="ci-info">
+                <div class="ci-row1"><div class="ci-name">张女士</div><div class="ci-time">3分钟前</div></div>
+                <div class="ci-company">星辰科技 · AI产品经理</div>
+                <div class="ci-preview">请问您最早什么时候可以到岗？</div>
+              </div>
+              <div class="ci-dot"></div>
+            </div>
+            <div class="chat-item" onclick="mOpenChat('li')">
+              <div class="ci-av" style="background:var(--sky-soft);color:var(--sky)">李</div>
+              <div class="ci-info">
+                <div class="ci-row1"><div class="ci-name">李先生</div><div class="ci-time">15分钟前</div></div>
+                <div class="ci-company">鼎新集团 · 高级产品经理</div>
+                <div class="ci-preview">方便这周三下午来面试吗？</div>
+              </div>
+              <div class="ci-dot"></div>
+            </div>
+            <div class="chat-item" onclick="mOpenChat('wang')">
+              <div class="ci-av" style="background:var(--amber-soft);color:var(--amber)">王</div>
+              <div class="ci-info">
+                <div class="ci-row1"><div class="ci-name">王女士</div><div class="ci-time">1小时前</div></div>
+                <div class="ci-company">社享科技 · 增长产品经理</div>
+                <div class="ci-preview">您的期望薪资大概是多少？</div>
+              </div>
+              <div class="ci-dot"></div>
+            </div>
+            <div class="chat-item" onclick="mOpenChat('zhao')">
+              <div class="ci-av" style="background:var(--green-soft);color:var(--green)">赵</div>
+              <div class="ci-info">
+                <div class="ci-row1"><div class="ci-name">赵先生</div><div class="ci-time">昨天</div></div>
+                <div class="ci-company">云数科技 · 数据产品经理</div>
+                <div class="ci-preview">好的，我这边先看看您的简历</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-page" id="chatDetailPage">
+        <div class="cp-nav">
+          <div class="cp-back" onclick="mCloseChat()">←</div>
+          <div class="cp-title" id="cpName">张女士</div>
+        </div>
+        <div class="cp-messages" id="cpMsgs">
+          <div class="cp-msg hr"><div class="cp-bubble">您好，看到您的简历觉得很匹配，请问您最早什么时候可以到岗？</div><div class="cp-time">14:32</div></div>
+          <div class="cp-msg me"><div class="cp-bubble">您好！感谢关注，我对这个岗位很感兴趣。</div><div class="cp-time">14:35</div></div>
+          <div class="cp-msg hr"><div class="cp-bubble">请问您最早什么时候可以到岗？目前还在职吗？</div><div class="cp-time">14:38</div></div>
+        </div>
+        <div class="cp-suggest">
+          <div class="cp-suggest-label">AI 建议回复</div>
+          <div class="cp-chips" id="cpChips">
+            <div class="cp-chip" onclick="mSelectChip(this)">1个月内到岗</div>
+            <div class="cp-chip" onclick="mSelectChip(this)">随时到岗</div>
+            <div class="cp-chip" onclick="mSelectChip(this)">需交接1个月</div>
+          </div>
+          <div class="cp-input-row">
+            <input type="text" id="cpInput" placeholder="输入消息...">
+            <button onclick="mSendMsg()">发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="page-scroll">
+        <div class="profile-hero">
+          <div class="pr-av">👤</div>
+          <div class="pr-name">张同学</div>
+          <div class="pr-email">zhang@email.com</div>
+        </div>
+
+        <div class="form-section" style="margin-top:16px">
+          <div class="fs-label">求职偏好</div>
+          <div class="form-row"><span>目标方向</span><span class="fr-val accent">AI产品、B端、增长<span class="fr-arrow">›</span></span></div>
+          <div class="form-row"><span>目标城市</span><span class="fr-val">北京、上海、杭州<span class="fr-arrow">›</span></span></div>
+          <div class="form-row"><span>最低薪资</span><span class="fr-val">20K<span class="fr-arrow">›</span></span></div>
+        </div>
+
+        <div class="form-section">
+          <div class="fs-label">投递策略</div>
+          <div class="form-row"><span>策略模式</span><span class="fr-val accent">练手优先<span class="fr-arrow">›</span></span></div>
+          <div class="form-row"><span>每日打招呼上限</span><span class="fr-val">50<span class="fr-arrow">›</span></span></div>
+        </div>
+
+        <div class="form-section" style="padding:0">
+          <div class="fs-label" style="padding:0 20px">自动回复</div>
+          <div class="toggle-row"><span>AI建议回复</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><span>自动发送回复</span><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><span>仅高匹配岗位自动回复</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+
+        <div class="form-section" style="padding:0">
+          <div class="fs-label" style="padding:0 20px">风险控制</div>
+          <div class="toggle-row"><span>风控自动暂停</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><span>跳过外包/风险岗位</span><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div style="height:24px"></div>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchPage('home')"><div class="t-icon">🏠</div><div class="t-label">概览</div></div>
+      <div class="tab" onclick="switchPage('jd')"><div class="t-icon">📋</div><div class="t-label">岗位</div></div>
+      <div class="tab" onclick="switchPage('chat')" style="position:relative"><div class="t-icon">💬</div><div class="t-label">消息</div><div class="t-badge"></div></div>
+      <div class="tab" onclick="switchPage('profile')"><div class="t-icon">👤</div><div class="t-label">我的</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab-bar .tab').forEach(t=>t.classList.remove('active'));
+  const map={home:0,jd:1,chat:2,profile:3};
+  document.querySelectorAll('.tab-bar .tab')[map[name]].classList.add('active');
+  if(name==='chat') mCloseChat();
+}
+
+function mToggleHosting(){
+  const dot=document.getElementById('mDot');
+  const status=document.getElementById('mStatus');
+  const btn=document.getElementById('mToggle');
+  if(dot.classList.contains('off')){
+    dot.classList.remove('off');status.textContent='AI 托管运行中';btn.textContent='暂停托管';
+  }else{
+    dot.classList.add('off');status.textContent='AI 托管已暂停';btn.textContent='继续托管';
+  }
+}
+
+function mFilterJd(el,dir){
+  document.querySelectorAll('.filter-pills button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.jd-item').forEach(item=>{
+    if(dir==='all'){item.style.display='';return}
+    item.style.display=item.dataset.dir===dir?'':'none';
+  });
+}
+
+function mGreet(btn){
+  btn.textContent='已打招呼';btn.style.background='var(--green)';btn.disabled=true;
+  const item=btn.closest('.jd-item');item.style.opacity='.5';item.style.pointerEvents='none';
+}
+function mSkip(btn){
+  const item=btn.closest('.jd-item');item.style.opacity='.3';item.style.pointerEvents='none';
+}
+
+function mOpenChat(id){
+  document.getElementById('chatListPage').style.display='none';
+  document.getElementById('chatDetailPage').classList.add('active');
+  const data={
+    zhang:{name:'张女士',chips:['1个月内到岗','随时到岗','需交接1个月']},
+    li:{name:'李先生',chips:['周三下午可以','改到周四','本周都可以']},
+    wang:{name:'王女士',chips:['25-35K','面议','看综合package']},
+    zhao:{name:'赵先生',chips:['好的，期待','请问进度如何']},
+  };
+  const d=data[id]||data.zhang;
+  document.getElementById('cpName').textContent=d.name;
+  document.getElementById('cpChips').innerHTML=d.chips.map(c=>'<div class="cp-chip" onclick="mSelectChip(this)">'+c+'</div>').join('');
+}
+function mCloseChat(){
+  document.getElementById('chatListPage').style.display='';
+  document.getElementById('chatDetailPage').classList.remove('active');
+}
+function mSelectChip(el){document.getElementById('cpInput').value=el.textContent}
+function mSendMsg(){
+  const input=document.getElementById('cpInput');
+  if(!input.value.trim())return;
+  const msgs=document.getElementById('cpMsgs');
+  const now=new Date();const time=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  msgs.innerHTML+='<div class="cp-msg me"><div class="cp-bubble">'+input.value+'</div><div class="cp-time">'+time+'</div></div>';
+  input.value='';msgs.scrollTop=msgs.scrollHeight;
+}
+</script>
+</body>
+</html>
