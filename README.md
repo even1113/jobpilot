@@ -83,3 +83,17 @@ http://localhost:8000/prototype/
 - 不生成虚假经历或误导性求职信息。
 - 不鼓励无差别骚扰式投递。
 - 敏感信息需要加密存储，并遵循最小权限原则。
+# Project Operating System
+
+JobPilot now uses a standards-first workflow for requirements, UX, development, testing, Git, and agent collaboration.
+
+Start here before changing product behavior:
+
+- `standards/README.md`
+- `requirements/backlog.md`
+- `requirements/feature-map.md`
+- `quality/definition-of-ready.md`
+- `quality/definition-of-done.md`
+- `standards/git-standard.md`
+
+Core rule: every formal feature should have a stable `US-xxx` ID, and functional commits must include that ID in the commit message.
